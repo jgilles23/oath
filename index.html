@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Oath</title>
+    <!-- <link rel="icon" type="image/x-icon" href="./favicon.ico"> -->
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="main" id="main">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div>Oath</div>
+            <!-- <div>
+                <img id="number-button" src="./icons/number-sign.png" class="topbar-button"></img>
+                <img id="undo-button" src="./icons/undo.png" class="topbar-button"></img>
+                <img id="reset-button" src="./icons/math-multiplication.png" class="topbar-button"></img>
+            </div> -->
+        </div>
+        <div>
+            Attack Dice: <input id="attack-dice-input" type="number" value="5" min="0" step="1">
+            Defense Dice: <input id="defense-dice-input" type="number" value="2" min="0" step="1">
+            <br>
+            Probablity of having X more swords than shields.
+            <br>
+            <canvas id="simulation-results"></canvas>
+        </div>
+        <!-- Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.js"></script>
+        <script src="./out/main.js"></script>
+    </div>
+
+</body>
+
+</html>
