@@ -169,7 +169,14 @@ class Simulation {
             options: {
                 responsive: true,
                 plugins: {
-                    // legend: { display: false },
+                    legend: { 
+                        labels: {
+                            filter: (item: any, chart: any) => {
+                                // Logic to remove a particular legend item goes here
+                                return !item.text.includes('Guide');
+                            }
+                        }
+                     },
                 },
                 scales: {
                     x: {
@@ -182,7 +189,7 @@ class Simulation {
                     },
                     y2: {
                         type: "linear",
-                        position: "right",
+                        position: "left",
                         min: 0,
                         max: 1,
                     }
@@ -199,7 +206,7 @@ class Simulation {
         this.histogramList = []
         for (let i = 0; i < this.numSimulations; i++) {
             let campaign = new Campaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value))
-            this.histogramList.push(campaign.netWarbands) // SHOW NET WARBANDS OVERCOME OR LOST
+            this.histogramList.push(campaign.netSwords) // SHOW NET WARBANDS OVERCOME OR LOST
         }
         // Calculate frequency of each value in the dataset
         const frequencies = this.histogramList.reduce((freq: NumberIndexedObject, value: number) => {
@@ -224,11 +231,10 @@ class Simulation {
         // Set x axis minimum and maxiumum
         this.config.options.scales.x.min = Math.max(-20, freqSortedLabels[0])
         this.config.options.scales.x.max = Math.min(20, freqSortedLabels[freqSortedLabels.length - 1])
-        if (this.config.options.scales.x.min >=  this.config.options.scales.x.max) {
+        if (this.config.options.scales.x.min >= this.config.options.scales.x.max) {
             this.config.options.scales.x.min = freqSortedLabels[0]
             this.config.options.scales.x.max = freqSortedLabels[freqSortedLabels.length - 1]
         }
-        console.log(this.config.options.scales.x)
         // Load the probability distribution
         this.config.data.datasets = [
             { // probability distribution
@@ -245,7 +251,40 @@ class Simulation {
                 yAxisID: "y2",
                 type: "line",
                 order: 0,
-            }];
+            },
+        ];
+        // Function for interpolating points along the CDF
+        function interpolateX(yTarget: number, xValues: Array<number>, yValues: Array<number>): number {
+            // Find the x value interpolated between x and y values in a set of values
+            // xValues & yValues must be in order for smallest to largest
+            let xTarget: number | undefined = undefined
+            for (let i = 1; i < freqSortedLabels.length; i++) {
+                if (yTarget >= yValues[i - 1] && yTarget <= yValues[i]) {
+                    xTarget = (yTarget - yValues[i - 1]) / (yValues[i] - yValues[i - 1]) * (xValues[i] - xValues[i - 1]) + xValues[i - 1]
+                    break
+                }
+            }
+            if (yTarget < yValues[0]) {
+                xTarget = -1 * 10 ** 10
+            } else if (xTarget === undefined) {
+                xTarget = 10 ** 10
+            }
+            return xTarget
+        }
+        // Interpolate points of interest
+        for (let yTarget of [0.2, 0.5, 0.8]) {
+            let xTarget = interpolateX(yTarget, freqSortedLabels, cumulativeValuesSorted)
+            this.config.data.datasets.push({
+                label: "Guide",
+                data: [{ x: xTarget, y: 0 }, { x: xTarget, y: yTarget }],
+                borderColor: "#dc143c",
+                backgroundColor: "#dc143c",
+                pointRadius: 4,
+                type: "line",
+                yAxisID: "y2",
+                order: -1,
+            })
+        }
         // Update the chart
         this.chart.update()
         console.log(this)
