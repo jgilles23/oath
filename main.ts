@@ -61,6 +61,7 @@ class Campaign {
     shields: number
     // Comparison properties
     netSwords: number
+    netWarbands: number // Some warbands will inherently be killed while attacking
 
     constructor(attackDice: number, defenseDice: number) {
         // Create a rolling simulation for oath board game with the specified number of attack die & defense die
@@ -80,6 +81,7 @@ class Campaign {
         this.shields = 0
         // Cumulative properties
         this.netSwords = 0
+        this.netWarbands = 0
         // ROLL the dice
         for (let i = 0; i < attackDice; i++) {
             this.rollAttack()
@@ -105,6 +107,7 @@ class Campaign {
         // Calculate the current attack
         this.swords = this.fullSwordFaces + Math.floor(this.halfSwordFaces / 2) + 2 * this.skullFaces
         this.netSwords = this.swords - this.shields
+        this.netWarbands = this.netSwords - this.skullFaces
     }
     rollDefense() {
         // Roll an defense die from oath and add to the roll results
@@ -126,12 +129,13 @@ class Campaign {
         // Calculate the current defense
         this.shields = (this.oneShieldFaces + 2 * this.twoShieldFaces) * 2 ** (this.doubleFaces)
         this.netSwords = this.swords - this.shields
+        this.netWarbands = this.netSwords - this.skullFaces
     }
 }
 
 class Simulation {
     // Class for creating simulations of the game state
-    netSwordsList: Array<number>
+    histogramList: Array<number>
     attackDiceInput: HTMLInputElement
     defenseDiceInput: HTMLInputElement
     numSimulations: number
@@ -144,7 +148,7 @@ class Simulation {
         //Pull visual elements
         this.canvas = document.getElementById("simulation-results") as HTMLCanvasElement
         // Pull the data from the page and create the simulation updator
-        this.netSwordsList = []
+        this.histogramList = []
         this.numSimulations = numSimulations
         // Setup buttons and numbers
         this.attackDiceInput = document.getElementById("attack-dice-input") as HTMLInputElement
@@ -165,12 +169,22 @@ class Simulation {
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { display: false },
+                    // legend: { display: false },
                 },
                 scales: {
                     x: {
                         type: "linear",
-                        // min: 100,
+                    },
+                    y: {
+                        type: "linear",
+                        position: "left",
+                        display: false,
+                    },
+                    y2: {
+                        type: "linear",
+                        position: "right",
+                        min: 0,
+                        max: 1,
                     }
                 }
             },
@@ -182,31 +196,57 @@ class Simulation {
     }
     load() {
         // Re-run the simulation for the current inputs and update the graphics
-        this.netSwordsList = []
+        this.histogramList = []
         for (let i = 0; i < this.numSimulations; i++) {
             let campaign = new Campaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value))
-            this.netSwordsList.push(campaign.netSwords)
+            this.histogramList.push(campaign.netWarbands) // SHOW NET WARBANDS OVERCOME OR LOST
         }
         // Calculate frequency of each value in the dataset
-        const frequencies = this.netSwordsList.reduce((freq: NumberIndexedObject, value: number) => {
-            freq[value] = (freq[value] || 0) + 1;
+        const frequencies = this.histogramList.reduce((freq: NumberIndexedObject, value: number) => {
+            freq[value] = (freq[value] || 0) + 1 / this.numSimulations;
             return freq;
         }, {});
-        // Convert the frequencies object into arrays of keys and values
-        let labels = Object.keys(frequencies);
-        let values = labels.map((key: any) => frequencies[parseInt(key)]);
-        // Normalize the values
-        const sum = values.reduce((acc, curr) => acc + curr, 0);
-        values = values.map(count => count / sum);
-        console.log(labels, values)
-        // Add a secondary axis
-        // Load the scenario into the chat & display
-        this.config.data.labels = labels
-        this.config.data.datasets = [{
-            label: "Data One",
-            data: values,
-            backgroundColor: "#6495ed",
-        }];
+        // Frequency labels
+        let freqSortedLabels: Array<number> = []
+        for (let key in frequencies) {
+            freqSortedLabels.push(parseInt(key))
+        }
+        freqSortedLabels.sort((a, b) => a - b)
+        // Calculate cumulative values
+        let cumulativeValuesSorted = []
+        let cumulativeSum = 0
+        for (let key of freqSortedLabels) {
+            cumulativeSum += frequencies[key]
+            cumulativeValuesSorted.push(cumulativeSum)
+        }
+        // Load graph labels
+        this.config.data.labels = freqSortedLabels
+        // Set x axis minimum and maxiumum
+        this.config.options.scales.x.min = Math.max(-20, freqSortedLabels[0])
+        this.config.options.scales.x.max = Math.min(20, freqSortedLabels[freqSortedLabels.length - 1])
+        if (this.config.options.scales.x.min >=  this.config.options.scales.x.max) {
+            this.config.options.scales.x.min = freqSortedLabels[0]
+            this.config.options.scales.x.max = freqSortedLabels[freqSortedLabels.length - 1]
+        }
+        console.log(this.config.options.scales.x)
+        // Load the probability distribution
+        this.config.data.datasets = [
+            { // probability distribution
+                label: "Probability Distribution",
+                data: freqSortedLabels.map(x => frequencies[x]),
+                backgroundColor: "#6495ed",
+                order: 1,
+            },
+            { // Cunulative distribution
+                label: "Cumulative Distribution",
+                data: cumulativeValuesSorted,
+                borderColor: "#0000ff",
+                backgroundColor: "#0000ff",
+                yAxisID: "y2",
+                type: "line",
+                order: 0,
+            }];
+        // Update the chart
         this.chart.update()
         console.log(this)
     }
