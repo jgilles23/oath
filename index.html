@@ -22,13 +22,20 @@
             </div> -->
         </div>
         <div>
-            Attack Dice: <input id="attack-dice-input" type="number" value="5" min="0" step="1">
+            Attack Dice: <input id="attack-dice-input" type="number" value="5" min="0" step="1"><br>
+            Attack Warbands: <input id="attack-warbands-input" type="number" value="0" min="0" step="1"><br>
+            Defense Dice: <input id="defense-dice-input" type="number" value="2" min="0" step="1"><br>
+            Defense Warbands: <input id="defense-warbands-input" type="number" value="0" min="0" step="1"><br>
+            <button id="roll-dice">Roll Dice</button><br>
             <br>
-            Defense Dice: <input id="defense-dice-input" type="number" value="2" min="0" step="1">
+            <div id="roll-area"></div><br>
             <br>
-            Probablity of having X more swords than shields.
+            <p>Probablity of rolling more swords (positive) than shields (negative).</p>
+            <canvas id="simulation-results"></canvas><br>
             <br>
-            <canvas id="simulation-results"></canvas>
+            <p>Probability of rolling listed amount of skulls.</p>
+            <canvas id="skull-results"></canvas><br>
+            <br>
         </div>
         <!-- Scripts -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.js"></script>

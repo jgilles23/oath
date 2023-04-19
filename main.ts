@@ -1,6 +1,20 @@
 // Control variables
 const seedString = "chronicles of empire and exile"
 const numSimulations = 1000
+const htmlIDs = {
+    attackInput: "attack-dice-input",
+    defenseInput: "defense-dice-input",
+    rollButton: "roll-dice",
+    rollArea: "roll-area",
+    simulationArea: "simulation-results",
+    skullArea: "skull-results"
+}
+// Test HTML IDs
+for (let key in htmlIDs) {
+    if (document.getElementById(key) === undefined) {
+        throw "HTML ID not found: " + key
+    }
+}
 
 // Typescript Types
 interface NumberIndexedObject {
@@ -44,8 +58,9 @@ var seed = cyrb128(seedString);
 // Four 32-bit component hashes provide the seed for sfc32.
 var rand = sfc32(seed[0], seed[1], seed[2], seed[3]); // Call rand() to generate a random number
 
-class Campaign {
+class SimplifiedCampaign {
     // Class for simulating a dice and compiling the results of the simulation
+    // Simplified because it does not include information on the number of warbands for attacker & defender
     // Attack properties
     attackDice: number // Number of attach die rolled
     halfSwordFaces: number // 3 of 6 faces
@@ -133,32 +148,52 @@ class Campaign {
     }
 }
 
-class Simulation {
-    // Class for creating simulations of the game state
-    histogramList: Array<number>
-    attackDiceInput: HTMLInputElement
-    defenseDiceInput: HTMLInputElement
-    numSimulations: number
+class FullCampaign extends SimplifiedCampaign {
+    // Full campaign also includes information on the number of warbands held by attacker & defender
+    attackWarbands: number
+    defenseWarbands: number
+    winner: "Attack" | "Defense" //Winner is Attacker if they have enough warbands that can be sacraficed
+    attackSacrafices: number //0 if no attack sacrafices are required for victory, otherwise a number
+
+    constructor(attackDice: number, defenseDice: number, attackWarbands: number, defenseWarbands:number) {
+        // Like Campaign, but show who the winner & loser are based on number of warbands for each
+        super(attackDice, defenseDice)
+        this.attackWarbands = attackWarbands
+        this.defenseWarbands = defenseWarbands
+        this.attackSacrafices = 0
+        // Calculate winner and associated properties
+        if (this.netSwords > 0) {
+            this.winner = "Attack"
+        } else if (this.netSwords + this.attackWarbands - this.skullFaces > 0) {
+            this.winner = "Attack"
+            this.attackSacrafices = -1 * this.netSwords
+        } else {
+            this.winner = "Defense"
+        }
+    }
+}
+
+class Histogram {
     // Visual elements
-    canvas: HTMLCanvasElement
+    canvas: HTMLCanvasElement // HTML Canvas element for holding the chart
     chart: any
     config: any
+    dropLinePoints: Array<number> // Points at which the visual should drop lines on the CFD graph
+    bounds: [number | undefined, number | undefined]
 
-    constructor() {
+    constructor(canvasID: string, dropLinePoints: Array<number>, enforcedBounds: [number | undefined, number | undefined]) {
+        // Histogram canvas object
+        // Histogram list - array of number that should be histogramed
+        // CanvasID - ID of html canvas element to draw on
+        // dropLinePoints - Array of numbers between 0 and 1 to drop lines on the canvas
+        // enforced bounds - furthest out bounds that will be shown in the histogram, undefined if all allowed 
+        //.load() must be calld to display actual data
+
         //Pull visual elements
-        this.canvas = document.getElementById("simulation-results") as HTMLCanvasElement
-        // Pull the data from the page and create the simulation updator
-        this.histogramList = []
-        this.numSimulations = numSimulations
-        // Setup buttons and numbers
-        this.attackDiceInput = document.getElementById("attack-dice-input") as HTMLInputElement
-        this.attackDiceInput.onchange = () => {
-            this.load()
-        }
-        this.defenseDiceInput = document.getElementById("defense-dice-input") as HTMLInputElement
-        this.defenseDiceInput.onchange = () => {
-            this.load()
-        }
+        this.canvas = document.getElementById(canvasID) as HTMLCanvasElement
+        // Define the drop line points
+        this.dropLinePoints = dropLinePoints
+        this.bounds = enforcedBounds
         // Setup visual options
         this.config = {
             type: 'bar',
@@ -169,14 +204,14 @@ class Simulation {
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { 
+                    legend: {
                         labels: {
                             filter: (item: any, chart: any) => {
                                 // Logic to remove a particular legend item goes here
                                 return !item.text.includes('Guide');
                             }
                         }
-                     },
+                    },
                 },
                 scales: {
                     x: {
@@ -197,20 +232,13 @@ class Simulation {
             },
         };
         // Load the chart with no data
-        this.chart = new Chart(this.canvas, this.config) //NEEDED TO INSTALL THE TYPES FOR CHART.JS
-        //Load the initial data
-        this.load()
+        this.chart = new Chart(this.canvas, this.config) //NEED TO INSTALL THE TYPES FOR CHART.JS
     }
-    load() {
-        // Re-run the simulation for the current inputs and update the graphics
-        this.histogramList = []
-        for (let i = 0; i < this.numSimulations; i++) {
-            let campaign = new Campaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value))
-            this.histogramList.push(campaign.netSwords) // SHOW NET WARBANDS OVERCOME OR LOST
-        }
+    load(histogramList: Array<number>) {
+        // Load data into the histogram canvas and display
         // Calculate frequency of each value in the dataset
-        const frequencies = this.histogramList.reduce((freq: NumberIndexedObject, value: number) => {
-            freq[value] = (freq[value] || 0) + 1 / this.numSimulations;
+        const frequencies = histogramList.reduce((freq: NumberIndexedObject, value: number) => {
+            freq[value] = (freq[value] || 0) + 1 / histogramList.length;
             return freq;
         }, {});
         // Frequency labels
@@ -229,8 +257,8 @@ class Simulation {
         // Load graph labels
         this.config.data.labels = freqSortedLabels
         // Set x axis minimum and maxiumum
-        this.config.options.scales.x.min = Math.max(-20, freqSortedLabels[0])
-        this.config.options.scales.x.max = Math.min(20, freqSortedLabels[freqSortedLabels.length - 1])
+        this.config.options.scales.x.min = Math.max(this.bounds[0] ?? -1 * 10 ** 10, freqSortedLabels[0])
+        this.config.options.scales.x.max = Math.min(this.bounds[1] ?? 10 ** 10, freqSortedLabels[freqSortedLabels.length - 1])
         if (this.config.options.scales.x.min >= this.config.options.scales.x.max) {
             this.config.options.scales.x.min = freqSortedLabels[0]
             this.config.options.scales.x.max = freqSortedLabels[freqSortedLabels.length - 1]
@@ -238,13 +266,13 @@ class Simulation {
         // Load the probability distribution
         this.config.data.datasets = [
             { // probability distribution
-                label: "Probability Distribution",
+                label: "Distribution",
                 data: freqSortedLabels.map(x => frequencies[x]),
                 backgroundColor: "#6495ed",
                 order: 1,
             },
             { // Cunulative distribution
-                label: "Cumulative Distribution",
+                label: "Cumulative",
                 data: cumulativeValuesSorted,
                 borderColor: "#0000ff",
                 backgroundColor: "#0000ff",
@@ -272,7 +300,7 @@ class Simulation {
             return xTarget
         }
         // Interpolate points of interest
-        for (let yTarget of [0.2, 0.5, 0.8]) {
+        for (let yTarget of this.dropLinePoints) {
             let xTarget = interpolateX(yTarget, freqSortedLabels, cumulativeValuesSorted)
             this.config.data.datasets.push({
                 label: "Guide",
@@ -287,10 +315,110 @@ class Simulation {
         }
         // Update the chart
         this.chart.update()
-        console.log(this)
     }
-
-
 }
 
-new Simulation()
+class Simulation {
+    // Class for creating simulations of the game state
+    attackDiceInput: HTMLInputElement
+    defenseDiceInput: HTMLInputElement
+    numSimulations: number
+    // Setup histograms for calculated properties
+    deltaHistogram: Histogram
+    skullsHistogram: Histogram
+
+    constructor(numSimulations: number) {
+        // Setup base properties
+        this.numSimulations = numSimulations
+        this.deltaHistogram = new Histogram(htmlIDs.simulationArea, [0.2, 0.5, 0.8], [-100, 100])
+        this.skullsHistogram = new Histogram(htmlIDs.skullArea, [0.2, 0.5, 0.8], [undefined, undefined])
+        // Setup buttons and numbers
+        this.attackDiceInput = document.getElementById(htmlIDs.attackInput) as HTMLInputElement
+        this.defenseDiceInput = document.getElementById(htmlIDs.defenseInput) as HTMLInputElement
+        // Load the histograms
+        this.load()
+    }
+    load() {
+        // Re-run the simulation for the current inputs and update the graphics
+        let netSwords = []
+        let skulls = []
+        for (let i = 0; i < this.numSimulations; i++) {
+            let campaign = new SimplifiedCampaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value))
+            netSwords.push(campaign.netSwords) // Net swords, positive is more swords
+            skulls.push(Math.floor(campaign.skullFaces)) // Skulls shown on dice
+        }
+        // Update the two histograms
+        this.deltaHistogram.load(netSwords)
+        this.skullsHistogram.load(skulls)
+
+    }
+}
+
+class Roller {
+    // Class for simulating dice rolls and displaying to the
+    attackDiceInput: HTMLInputElement
+    defenseDiceInput: HTMLInputElement
+
+    constructor() {
+        this.attackDiceInput = document.getElementById(htmlIDs.attackInput) as HTMLInputElement
+        this.defenseDiceInput = document.getElementById(htmlIDs.defenseInput) as HTMLInputElement
+    }
+    clear() {
+        let areaDiv = document.getElementById(htmlIDs.rollArea) as HTMLDivElement
+        areaDiv.innerHTML = ""
+    }
+    roll() {
+        // Animate a simulated rolling of the dice
+        let campaign = new SimplifiedCampaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value))
+        const attributeIconPairs: Array<[number, string]> = [
+            [campaign.skullFaces, "skullSword.png"],
+            [campaign.fullSwordFaces, "oneSword.png"],
+            [campaign.halfSwordFaces, "halfSword.png"],
+            [campaign.doubleFaces, "doubleShield.png"],
+            [campaign.twoShieldFaces, "twoShield.png"],
+            [campaign.oneShieldFaces, "oneShield.png"],
+            [campaign.blankFaces, "blankShield.png"]
+        ]
+        // Get the area where we are going to put the roller
+        let areaDiv = document.getElementById(htmlIDs.rollArea) as HTMLDivElement
+        areaDiv.innerHTML = ""
+        // Add the appropriate images
+        for (let iconPair of attributeIconPairs) {
+            for (let i = 0; i < iconPair[0]; i++) {
+                let diceFace = document.createElement("img")
+                diceFace.src = "./icons/" + iconPair[1]
+                diceFace.classList.add("dice-face")
+                areaDiv.appendChild(diceFace)
+            }
+        }
+        // Add text to help the player understand the result
+        let explanationText = document.createElement("p")
+        areaDiv.appendChild(explanationText)
+        explanationText.innerHTML = `
+        Swords: ${campaign.swords}, 
+        Skulls: ${campaign.skullFaces},
+        Shields: ${campaign.shields},
+        Net Swords: ${campaign.netSwords} <br>
+        Winner: 
+        `
+    }
+}
+
+
+let simulation = new Simulation(numSimulations)
+let roller = new Roller()
+roller.roll()
+
+document.getElementById(htmlIDs.attackInput)!.onchange = () => {
+    simulation.load()
+    roller.clear()
+}
+
+document.getElementById(htmlIDs.defenseInput)!.onchange = () => {
+    simulation.load()
+    roller.clear()
+}
+
+document.getElementById(htmlIDs.rollButton)!.onclick = () => {
+    roller.roll()
+}

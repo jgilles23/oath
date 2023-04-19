@@ -2,6 +2,20 @@
 // Control variables
 const seedString = "chronicles of empire and exile";
 const numSimulations = 1000;
+const htmlIDs = {
+    attackInput: "attack-dice-input",
+    defenseInput: "defense-dice-input",
+    rollButton: "roll-dice",
+    rollArea: "roll-area",
+    simulationArea: "simulation-results",
+    skullArea: "skull-results"
+};
+// Test HTML IDs
+for (let key in htmlIDs) {
+    if (document.getElementById(key) === undefined) {
+        throw "HTML ID not found: " + key;
+    }
+}
 //Random number generator
 //https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 function cyrb128(str) {
@@ -39,7 +53,7 @@ function sfc32(a, b, c, d) {
 var seed = cyrb128(seedString);
 // Four 32-bit component hashes provide the seed for sfc32.
 var rand = sfc32(seed[0], seed[1], seed[2], seed[3]); // Call rand() to generate a random number
-class Campaign {
+class SimplifiedCampaign {
     constructor(attackDice, defenseDice) {
         // Create a rolling simulation for oath board game with the specified number of attack die & defense die
         // Initialize properties
@@ -114,22 +128,39 @@ class Campaign {
         this.netWarbands = this.netSwords - this.skullFaces;
     }
 }
-class Simulation {
-    constructor() {
+class FullCampaign extends SimplifiedCampaign {
+    constructor(attackDice, defenseDice, attackWarbands, defenseWarbands) {
+        // Like Campaign, but show who the winner & loser are based on number of warbands for each
+        super(attackDice, defenseDice);
+        this.attackWarbands = attackWarbands;
+        this.defenseWarbands = defenseWarbands;
+        this.attackSacrafices = 0;
+        // Calculate winner and associated properties
+        if (this.netSwords > 0) {
+            this.winner = "Attack";
+        }
+        else if (this.netSwords + this.attackWarbands - this.skullFaces > 0) {
+            this.winner = "Attack";
+            this.attackSacrafices = -1 * this.netSwords;
+        }
+        else {
+            this.winner = "Defense";
+        }
+    }
+}
+class Histogram {
+    constructor(canvasID, dropLinePoints, enforcedBounds) {
+        // Histogram canvas object
+        // Histogram list - array of number that should be histogramed
+        // CanvasID - ID of html canvas element to draw on
+        // dropLinePoints - Array of numbers between 0 and 1 to drop lines on the canvas
+        // enforced bounds - furthest out bounds that will be shown in the histogram, undefined if all allowed 
+        //.load() must be calld to display actual data
         //Pull visual elements
-        this.canvas = document.getElementById("simulation-results");
-        // Pull the data from the page and create the simulation updator
-        this.histogramList = [];
-        this.numSimulations = numSimulations;
-        // Setup buttons and numbers
-        this.attackDiceInput = document.getElementById("attack-dice-input");
-        this.attackDiceInput.onchange = () => {
-            this.load();
-        };
-        this.defenseDiceInput = document.getElementById("defense-dice-input");
-        this.defenseDiceInput.onchange = () => {
-            this.load();
-        };
+        this.canvas = document.getElementById(canvasID);
+        // Define the drop line points
+        this.dropLinePoints = dropLinePoints;
+        this.bounds = enforcedBounds;
         // Setup visual options
         this.config = {
             type: 'bar',
@@ -168,20 +199,14 @@ class Simulation {
             },
         };
         // Load the chart with no data
-        this.chart = new Chart(this.canvas, this.config); //NEEDED TO INSTALL THE TYPES FOR CHART.JS
-        //Load the initial data
-        this.load();
+        this.chart = new Chart(this.canvas, this.config); //NEED TO INSTALL THE TYPES FOR CHART.JS
     }
-    load() {
-        // Re-run the simulation for the current inputs and update the graphics
-        this.histogramList = [];
-        for (let i = 0; i < this.numSimulations; i++) {
-            let campaign = new Campaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value));
-            this.histogramList.push(campaign.netSwords); // SHOW NET WARBANDS OVERCOME OR LOST
-        }
+    load(histogramList) {
+        var _a, _b;
+        // Load data into the histogram canvas and display
         // Calculate frequency of each value in the dataset
-        const frequencies = this.histogramList.reduce((freq, value) => {
-            freq[value] = (freq[value] || 0) + 1 / this.numSimulations;
+        const frequencies = histogramList.reduce((freq, value) => {
+            freq[value] = (freq[value] || 0) + 1 / histogramList.length;
             return freq;
         }, {});
         // Frequency labels
@@ -200,8 +225,8 @@ class Simulation {
         // Load graph labels
         this.config.data.labels = freqSortedLabels;
         // Set x axis minimum and maxiumum
-        this.config.options.scales.x.min = Math.max(-20, freqSortedLabels[0]);
-        this.config.options.scales.x.max = Math.min(20, freqSortedLabels[freqSortedLabels.length - 1]);
+        this.config.options.scales.x.min = Math.max((_a = this.bounds[0]) !== null && _a !== void 0 ? _a : -1 * 10 ** 10, freqSortedLabels[0]);
+        this.config.options.scales.x.max = Math.min((_b = this.bounds[1]) !== null && _b !== void 0 ? _b : 10 ** 10, freqSortedLabels[freqSortedLabels.length - 1]);
         if (this.config.options.scales.x.min >= this.config.options.scales.x.max) {
             this.config.options.scales.x.min = freqSortedLabels[0];
             this.config.options.scales.x.max = freqSortedLabels[freqSortedLabels.length - 1];
@@ -209,13 +234,13 @@ class Simulation {
         // Load the probability distribution
         this.config.data.datasets = [
             {
-                label: "Probability Distribution",
+                label: "Distribution",
                 data: freqSortedLabels.map(x => frequencies[x]),
                 backgroundColor: "#6495ed",
                 order: 1,
             },
             {
-                label: "Cumulative Distribution",
+                label: "Cumulative",
                 data: cumulativeValuesSorted,
                 borderColor: "#0000ff",
                 backgroundColor: "#0000ff",
@@ -244,7 +269,7 @@ class Simulation {
             return xTarget;
         }
         // Interpolate points of interest
-        for (let yTarget of [0.2, 0.5, 0.8]) {
+        for (let yTarget of this.dropLinePoints) {
             let xTarget = interpolateX(yTarget, freqSortedLabels, cumulativeValuesSorted);
             this.config.data.datasets.push({
                 label: "Guide",
@@ -259,8 +284,91 @@ class Simulation {
         }
         // Update the chart
         this.chart.update();
-        console.log(this);
     }
 }
-new Simulation();
+class Simulation {
+    constructor(numSimulations) {
+        // Setup base properties
+        this.numSimulations = numSimulations;
+        this.deltaHistogram = new Histogram(htmlIDs.simulationArea, [0.2, 0.5, 0.8], [-100, 100]);
+        this.skullsHistogram = new Histogram(htmlIDs.skullArea, [0.2, 0.5, 0.8], [undefined, undefined]);
+        // Setup buttons and numbers
+        this.attackDiceInput = document.getElementById(htmlIDs.attackInput);
+        this.defenseDiceInput = document.getElementById(htmlIDs.defenseInput);
+        // Load the histograms
+        this.load();
+    }
+    load() {
+        // Re-run the simulation for the current inputs and update the graphics
+        let netSwords = [];
+        let skulls = [];
+        for (let i = 0; i < this.numSimulations; i++) {
+            let campaign = new SimplifiedCampaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value));
+            netSwords.push(campaign.netSwords); // Net swords, positive is more swords
+            skulls.push(Math.floor(campaign.skullFaces)); // Skulls shown on dice
+        }
+        // Update the two histograms
+        this.deltaHistogram.load(netSwords);
+        this.skullsHistogram.load(skulls);
+    }
+}
+class Roller {
+    constructor() {
+        this.attackDiceInput = document.getElementById(htmlIDs.attackInput);
+        this.defenseDiceInput = document.getElementById(htmlIDs.defenseInput);
+    }
+    clear() {
+        let areaDiv = document.getElementById(htmlIDs.rollArea);
+        areaDiv.innerHTML = "";
+    }
+    roll() {
+        // Animate a simulated rolling of the dice
+        let campaign = new SimplifiedCampaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value));
+        const attributeIconPairs = [
+            [campaign.skullFaces, "skullSword.png"],
+            [campaign.fullSwordFaces, "oneSword.png"],
+            [campaign.halfSwordFaces, "halfSword.png"],
+            [campaign.doubleFaces, "doubleShield.png"],
+            [campaign.twoShieldFaces, "twoShield.png"],
+            [campaign.oneShieldFaces, "oneShield.png"],
+            [campaign.blankFaces, "blankShield.png"]
+        ];
+        // Get the area where we are going to put the roller
+        let areaDiv = document.getElementById(htmlIDs.rollArea);
+        areaDiv.innerHTML = "";
+        // Add the appropriate images
+        for (let iconPair of attributeIconPairs) {
+            for (let i = 0; i < iconPair[0]; i++) {
+                let diceFace = document.createElement("img");
+                diceFace.src = "./icons/" + iconPair[1];
+                diceFace.classList.add("dice-face");
+                areaDiv.appendChild(diceFace);
+            }
+        }
+        // Add text to help the player understand the result
+        let explanationText = document.createElement("p");
+        areaDiv.appendChild(explanationText);
+        explanationText.innerHTML = `
+        Swords: ${campaign.swords}, 
+        Skulls: ${campaign.skullFaces},
+        Shields: ${campaign.shields},
+        Net Swords: ${campaign.netSwords} <br>
+        Winner: 
+        `;
+    }
+}
+let simulation = new Simulation(numSimulations);
+let roller = new Roller();
+roller.roll();
+document.getElementById(htmlIDs.attackInput).onchange = () => {
+    simulation.load();
+    roller.clear();
+};
+document.getElementById(htmlIDs.defenseInput).onchange = () => {
+    simulation.load();
+    roller.clear();
+};
+document.getElementById(htmlIDs.rollButton).onclick = () => {
+    roller.roll();
+};
 //# sourceMappingURL=main.js.map

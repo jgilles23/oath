@@ -16,7 +16,7 @@
 }
 
 .main {
-    width: 90%;
+    width: 90vmin;
     margin-left: 5%;
     font-family: 'Arial';
 }
@@ -32,4 +32,10 @@
 
 .topbar-button {
     height:0.5em;
+}
+
+.dice-face {
+    height: 2em;
+    width: 2em;
+    margin-right: 0.5em;
 }
