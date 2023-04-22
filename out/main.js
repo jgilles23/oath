@@ -4,11 +4,15 @@ const seedString = "chronicles of empire and exile";
 const numSimulations = 1000;
 const htmlIDs = {
     attackInput: "attack-dice-input",
+    attackWarbandsInput: "attack-warbands-input",
     defenseInput: "defense-dice-input",
+    defenseWarbandsInput: "defense-warbands-input",
     rollButton: "roll-dice",
     rollArea: "roll-area",
     simulationArea: "simulation-results",
-    skullArea: "skull-results"
+    skullArea: "skull-results",
+    allSimulationArea: "simulation-results-area",
+    toggleSimulations: "toggle-simulations"
 };
 // Test HTML IDs
 for (let key in htmlIDs) {
@@ -52,7 +56,9 @@ function sfc32(a, b, c, d) {
 // Create cyrb128 state:
 var seed = cyrb128(seedString);
 // Four 32-bit component hashes provide the seed for sfc32.
-var rand = sfc32(seed[0], seed[1], seed[2], seed[3]); // Call rand() to generate a random number
+let rand = sfc32(seed[0], seed[1], seed[2], seed[3]); // Call rand() to generate a random number
+//OVERRIDE RANDOM
+rand = () => Math.random();
 class SimplifiedCampaign {
     constructor(attackDice, defenseDice) {
         // Create a rolling simulation for oath board game with the specified number of attack die & defense die
@@ -74,10 +80,10 @@ class SimplifiedCampaign {
         this.netSwords = 0;
         this.netWarbands = 0;
         // ROLL the dice
-        for (let i = 0; i < attackDice; i++) {
+        for (let i = 0; i < (attackDice | 0); i++) {
             this.rollAttack();
         }
-        for (let i = 0; i < defenseDice; i++) {
+        for (let i = 0; i < (defenseDice | 0); i++) {
             this.rollDefense();
         }
     }
@@ -132,16 +138,18 @@ class FullCampaign extends SimplifiedCampaign {
     constructor(attackDice, defenseDice, attackWarbands, defenseWarbands) {
         // Like Campaign, but show who the winner & loser are based on number of warbands for each
         super(attackDice, defenseDice);
-        this.attackWarbands = attackWarbands;
-        this.defenseWarbands = defenseWarbands;
+        this.attackWarbands = attackWarbands | 0;
+        this.defenseWarbands = defenseWarbands | 0;
+        console.log(defenseWarbands);
         this.attackSacrafices = 0;
+        this.netAttack = this.netSwords - this.defenseWarbands;
         // Calculate winner and associated properties
-        if (this.netSwords > 0) {
+        if (this.netAttack > 0) {
             this.winner = "Attack";
         }
-        else if (this.netSwords + this.attackWarbands - this.skullFaces > 0) {
+        else if (this.netAttack + this.attackWarbands - this.skullFaces > 0) {
             this.winner = "Attack";
-            this.attackSacrafices = -1 * this.netSwords;
+            this.attackSacrafices = -1 * this.netAttack + 1;
         }
         else {
             this.winner = "Defense";
@@ -316,6 +324,8 @@ class Roller {
     constructor() {
         this.attackDiceInput = document.getElementById(htmlIDs.attackInput);
         this.defenseDiceInput = document.getElementById(htmlIDs.defenseInput);
+        this.attackWarbandsInput = document.getElementById(htmlIDs.attackWarbandsInput);
+        this.defenseWarbandsInput = document.getElementById(htmlIDs.defenseWarbandsInput);
     }
     clear() {
         let areaDiv = document.getElementById(htmlIDs.rollArea);
@@ -323,7 +333,7 @@ class Roller {
     }
     roll() {
         // Animate a simulated rolling of the dice
-        let campaign = new SimplifiedCampaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value));
+        let campaign = new FullCampaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value), parseInt(this.attackWarbandsInput.value), parseInt(this.defenseWarbandsInput.value));
         const attributeIconPairs = [
             [campaign.skullFaces, "skullSword.png"],
             [campaign.fullSwordFaces, "oneSword.png"],
@@ -348,27 +358,48 @@ class Roller {
         // Add text to help the player understand the result
         let explanationText = document.createElement("p");
         areaDiv.appendChild(explanationText);
+        let sacraficeText = campaign.attackSacrafices > 0 ? `(with ${campaign.attackSacrafices} sacrafice)` : "";
         explanationText.innerHTML = `
-        Swords: ${campaign.swords}, 
         Skulls: ${campaign.skullFaces},
-        Shields: ${campaign.shields},
-        Net Swords: ${campaign.netSwords} <br>
-        Winner: 
+        Swords: ${campaign.swords}, 
+        Shields: ${campaign.shields}, <br>
+        Net Attack: ${campaign.netAttack} <br>
+        Winner: ${campaign.winner} ${sacraficeText}
         `;
     }
 }
 let simulation = new Simulation(numSimulations);
 let roller = new Roller();
-roller.roll();
-document.getElementById(htmlIDs.attackInput).onchange = () => {
+// roller.roll()
+// attack input
+document.getElementById(htmlIDs.attackInput).oninput = () => {
     simulation.load();
     roller.clear();
 };
-document.getElementById(htmlIDs.defenseInput).onchange = () => {
+// attack warbandsinput
+document.getElementById(htmlIDs.attackWarbandsInput).oninput = () => {
+    roller.clear();
+};
+// defense input
+document.getElementById(htmlIDs.defenseInput).oninput = () => {
     simulation.load();
     roller.clear();
 };
+// defense warbands input
+document.getElementById(htmlIDs.defenseWarbandsInput).oninput = () => {
+    roller.clear();
+};
+// roll button
 document.getElementById(htmlIDs.rollButton).onclick = () => {
     roller.roll();
+};
+document.getElementById(htmlIDs.toggleSimulations).onclick = () => {
+    let simulationDiv = document.getElementById(htmlIDs.allSimulationArea);
+    if (simulationDiv.style.display === "none") {
+        simulationDiv.style.display = "block";
+    }
+    else {
+        simulationDiv.style.display = "none";
+    }
 };
 //# sourceMappingURL=main.js.map

@@ -23,19 +23,34 @@
         </div>
         <div>
             Attack Dice: <input id="attack-dice-input" type="number" value="5" min="0" step="1"><br>
-            Attack Warbands: <input id="attack-warbands-input" type="number" value="0" min="0" step="1"><br>
+            Attack Warbands: <input id="attack-warbands-input" type="number" value="5" min="0" step="1"><br>
             Defense Dice: <input id="defense-dice-input" type="number" value="2" min="0" step="1"><br>
-            Defense Warbands: <input id="defense-warbands-input" type="number" value="0" min="0" step="1"><br>
+            Defense Warbands: <input id="defense-warbands-input" type="number" value="6" min="0" step="1"><br>
+            <!-- <div class="input-group-container">
+                <img src="./icons/minus.png" class="input-adjust"></img>
+                <div class="input-text-container">
+                    <img src="./icons/blankShield.png" class="input-text"></img>
+                    99
+                </div>
+                <img src="./icons/plus.png" class="input-adjust"></img>
+            </div>
+            <div class="input-text-container">
+                <img src="./icons/meepleAttack.png" class="input-text"></img>
+                99
+            </div> -->
+            <br>
             <button id="roll-dice">Roll Dice</button><br>
             <br>
             <div id="roll-area"></div><br>
-            <br>
-            <p>Probablity of rolling more swords (positive) than shields (negative).</p>
-            <canvas id="simulation-results"></canvas><br>
-            <br>
-            <p>Probability of rolling listed amount of skulls.</p>
-            <canvas id="skull-results"></canvas><br>
-            <br>
+            <button id="toggle-simulations">Toggle Simulations</button>
+            <div id="simulation-results-area" style="display:none">
+                <p>Probablity of rolling more swords (positive) than shields (negative).</p>
+                <canvas id="simulation-results"></canvas><br>
+                <br>
+                <p>Probability of rolling listed amount of skulls.</p>
+                <canvas id="skull-results"></canvas><br>
+                <br>
+            </div>
         </div>
         <!-- Scripts -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.js"></script>

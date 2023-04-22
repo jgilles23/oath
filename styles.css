@@ -34,6 +34,37 @@
     height:0.5em;
 }
 
+.input-group-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.input-adjust {
+    height: .8em;
+    width: .8em;
+    margin-left: 0.2em;
+    margin-right: 0.2em;
+}
+
+.input-text-container {
+    --side-length: 1.5em;
+    height: var(--side-length);
+    width: var(--side-length);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    color: white;
+}
+
+.input-text {
+    height: var(--side-length);
+    width: var(--side-length);
+    position: absolute;
+    z-index: -1;
+}
+
 .dice-face {
     height: 2em;
     width: 2em;
