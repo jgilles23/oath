@@ -2,28 +2,34 @@
 const seedString = "chronicles of empire and exile"
 const numSimulations = 1000
 const htmlIDs = {
-    attackInput: "attack-dice-input",
-    attackWarbandsInput: "attack-warbands-input",
-    defenseInput: "defense-dice-input",
-    defenseWarbandsInput: "defense-warbands-input",
+    // simulation inputs
+    inputArea: "input-area",
+    templateTriple: "input-triple",
+    templateInput: "input-text",
+    templateUp: "input-up",
+    templateDown: "input-down",
+    templateImage: "input-image",
+    // Other areas and buttons
     rollButton: "roll-dice",
     rollArea: "roll-area",
     simulationArea: "simulation-results",
     skullArea: "skull-results",
     allSimulationArea: "simulation-results-area",
     toggleSimulations: "toggle-simulations"
-
 }
 // Test HTML IDs
-for (let key in htmlIDs) {
-    if (document.getElementById(key) === undefined) {
-        throw "HTML ID not found: " + key
+for (const [key, value] of Object.entries(htmlIDs)) {
+    if (document.getElementById(value) === null) {
+        throw "HTML ID not found: " + key + " | " + value
     }
 }
 
 // Typescript Types
 interface NumberIndexedObject {
     [key: number]: number;
+}
+interface StringReturnObject {
+    [key: string]: string;
 }
 
 
@@ -164,12 +170,11 @@ class FullCampaign extends SimplifiedCampaign {
     attackSacrafices: number //0 if no attack sacrafices are required for victory, otherwise a number
     netAttack: number //Includes defense warbands subtracted from net swords
 
-    constructor(attackDice: number, defenseDice: number, attackWarbands: number, defenseWarbands:number) {
+    constructor(attackDice: number, defenseDice: number, attackWarbands: number, defenseWarbands: number) {
         // Like Campaign, but show who the winner & loser are based on number of warbands for each
         super(attackDice, defenseDice)
         this.attackWarbands = attackWarbands | 0
         this.defenseWarbands = defenseWarbands | 0
-        console.log(defenseWarbands)
         this.attackSacrafices = 0
         this.netAttack = this.netSwords - this.defenseWarbands
         // Calculate winner and associated properties
@@ -341,11 +346,11 @@ class Simulation {
     constructor(numSimulations: number) {
         // Setup base properties
         this.numSimulations = numSimulations
-        this.deltaHistogram = new Histogram(htmlIDs.simulationArea, [0.2, 0.5, 0.8], [-100, 100])
+        this.deltaHistogram = new Histogram(htmlIDs.simulationArea, [0.2, 0.5, 0.8], [-50, 50])
         this.skullsHistogram = new Histogram(htmlIDs.skullArea, [0.2, 0.5, 0.8], [undefined, undefined])
         // Setup buttons and numbers
-        this.attackDiceInput = document.getElementById(htmlIDs.attackInput) as HTMLInputElement
-        this.defenseDiceInput = document.getElementById(htmlIDs.defenseInput) as HTMLInputElement
+        this.attackDiceInput = document.getElementById("attack-dice-" + htmlIDs.templateInput) as HTMLInputElement
+        this.defenseDiceInput = document.getElementById("defense-dice-" + htmlIDs.templateInput) as HTMLInputElement
         // Load the histograms
         this.load()
     }
@@ -373,10 +378,10 @@ class Roller {
     defenseWarbandsInput: HTMLInputElement
 
     constructor() {
-        this.attackDiceInput = document.getElementById(htmlIDs.attackInput) as HTMLInputElement
-        this.defenseDiceInput = document.getElementById(htmlIDs.defenseInput) as HTMLInputElement
-        this.attackWarbandsInput = document.getElementById(htmlIDs.attackWarbandsInput) as HTMLInputElement
-        this.defenseWarbandsInput = document.getElementById(htmlIDs.defenseWarbandsInput) as HTMLInputElement
+        this.attackDiceInput = document.getElementById("attack-dice-" + htmlIDs.templateInput) as HTMLInputElement
+        this.defenseDiceInput = document.getElementById("defense-dice-" + htmlIDs.templateInput) as HTMLInputElement
+        this.attackWarbandsInput = document.getElementById("attack-warbands-" + htmlIDs.templateInput) as HTMLInputElement
+        this.defenseWarbandsInput = document.getElementById("defense-warbands-" + htmlIDs.templateInput) as HTMLInputElement
     }
     clear() {
         let areaDiv = document.getElementById(htmlIDs.rollArea) as HTMLDivElement
@@ -385,7 +390,7 @@ class Roller {
     roll() {
         // Animate a simulated rolling of the dice
         let campaign = new FullCampaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value),
-        parseInt(this.attackWarbandsInput.value), parseInt(this.defenseWarbandsInput.value))
+            parseInt(this.attackWarbandsInput.value), parseInt(this.defenseWarbandsInput.value))
         const attributeIconPairs: Array<[number, string]> = [
             [campaign.skullFaces, "skullSword.png"],
             [campaign.fullSwordFaces, "oneSword.png"],
@@ -422,33 +427,6 @@ class Roller {
 }
 
 
-let simulation = new Simulation(numSimulations)
-let roller = new Roller()
-// roller.roll()
-
-// attack input
-document.getElementById(htmlIDs.attackInput)!.oninput = () => {
-    simulation.load()
-    roller.clear()
-}
-// attack warbandsinput
-document.getElementById(htmlIDs.attackWarbandsInput)!.oninput = () => {
-    roller.clear()
-}
-// defense input
-document.getElementById(htmlIDs.defenseInput)!.oninput = () => {
-    simulation.load()
-    roller.clear()
-}
-// defense warbands input
-document.getElementById(htmlIDs.defenseWarbandsInput)!.oninput = () => {
-    roller.clear()
-}
-// roll button
-document.getElementById(htmlIDs.rollButton)!.onclick = () => {
-    roller.roll()
-}
-
 document.getElementById(htmlIDs.toggleSimulations)!.onclick = () => {
     let simulationDiv = document.getElementById(htmlIDs.allSimulationArea) as HTMLDivElement
     if (simulationDiv.style.display === "none") {
@@ -456,4 +434,73 @@ document.getElementById(htmlIDs.toggleSimulations)!.onclick = () => {
     } else {
         simulationDiv.style.display = "none"
     }
+}
+
+const idPrefixesAndImageNames: Array<[string, string, number]> = [
+    // [id prefix, icon name, starting value]
+    ["attack-dice", "blankSword", 5],
+    ["attack-warbands", "meepleAttack", 0],
+    ["defense-dice", "blankShield", 2],
+    ["defense-warbands", "meepleDefense", 0]]
+
+let inputArea = document.getElementById(htmlIDs.inputArea) as HTMLDivElement
+for (let L of idPrefixesAndImageNames) {
+    let idPrefix = L[0]
+    let iconName = L[1]
+    let startingValue = L[2]
+    // Copy the template inputTriple
+    let inputTriple = document.getElementById(htmlIDs.templateTriple)?.cloneNode(true) as HTMLDivElement
+    inputArea.appendChild(inputTriple)
+    // Generate a unique ID for the copied element
+    inputTriple.setAttribute('id', idPrefix + htmlIDs.templateInput);
+    // Modify the IDs of the copied element's descendants
+    const descendantElements = inputTriple.querySelectorAll('[id]');
+    descendantElements.forEach((element) => {
+        element.setAttribute('id', idPrefix + '-' + element.getAttribute('id'));
+    });
+    //Change center icon
+    let centerImage = document.getElementById(idPrefix + "-" + htmlIDs.templateImage) as HTMLImageElement
+    centerImage.src = "./icons/" + iconName + ".png"
+    //Change stating number & set actions
+    let textInput = document.getElementById(idPrefix + "-" + htmlIDs.templateInput) as HTMLInputElement
+    textInput.value = startingValue.toString()
+}
+
+// Create main elements
+let simulation = new Simulation(numSimulations)
+let roller = new Roller()
+
+
+// Set all the actions for the inputs & buttons
+for (let L of idPrefixesAndImageNames) {
+    let idPrefix = L[0]
+    // Take the value of the input modidied by the delta and set as the new value
+    let textInput = document.getElementById(idPrefix + "-" + htmlIDs.templateInput) as HTMLInputElement
+    //     Function to sanatize inputs and set values
+    let setNewValue = (delta: number) => {
+        // Get new value as an integer
+        let valueInt = parseInt(textInput.value) + delta
+        if (valueInt < 0) {
+            valueInt = 0
+        } else if (valueInt > 99) {
+            valueInt = 99
+        } else if (!(valueInt >= 0 && valueInt <= 99)) {
+            valueInt = 0
+        }
+        // Set back the value
+        textInput.value = valueInt.toString()
+        // Reload everything required
+        simulation.load()
+        roller.clear()
+    }
+    textInput.oninput = () => { setNewValue(0) }
+    //Up arrow and set action
+    document.getElementById(idPrefix + "-" + htmlIDs.templateUp)!.onclick = () => { setNewValue(1) }
+    //Down arrow and set action
+    document.getElementById(idPrefix + "-" + htmlIDs.templateDown)!.onclick = () => { setNewValue(-1) }
+}
+
+// Create the roll dice button
+document.getElementById(htmlIDs.rollButton)!.onclick = () => {
+    roller.roll()
 }

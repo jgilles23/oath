@@ -31,42 +31,53 @@
 }
 
 .topbar-button {
-    height:0.5em;
+    height: 0.5em;
 }
 
-.input-group-container {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-}
 
-.input-adjust {
-    height: .8em;
-    width: .8em;
-    margin-left: 0.2em;
-    margin-right: 0.2em;
-}
-
-.input-text-container {
-    --side-length: 1.5em;
-    height: var(--side-length);
-    width: var(--side-length);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    color: white;
-}
-
-.input-text {
-    height: var(--side-length);
-    width: var(--side-length);
-    position: absolute;
-    z-index: -1;
-}
 
 .dice-face {
     height: 2em;
     width: 2em;
     margin-right: 0.5em;
+}
+
+.arrow-image {
+    display: block;
+    width: var(--box-width);
+}
+
+.input-image {
+    display: block;
+    width: var(--box-width);
+    margin: calc(var(--box-width)*0.1) auto;
+}
+
+.input-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: calc(var(--box-width)*0.8);
+    width: 100%;
+    padding: auto;
+    font-weight: bold;
+    text-align: center;
+    /* Undo input formatting */
+    border: none;
+    outline: none;
+    background-color: transparent;
+}
+
+.input-triple {
+    position: relative;
+}
+
+.input-area {
+    --box-width: 2.5em;
+    display: flex;
+    justify-content: space-between;
+    width: calc(min(100%, calc(10*var(--box-width))));
+    /* background-color: grey; */
+    flex-wrap: wrap;
 }

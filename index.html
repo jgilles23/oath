@@ -22,22 +22,7 @@
             </div> -->
         </div>
         <div>
-            Attack Dice: <input id="attack-dice-input" type="number" value="5" min="0" step="1"><br>
-            Attack Warbands: <input id="attack-warbands-input" type="number" value="5" min="0" step="1"><br>
-            Defense Dice: <input id="defense-dice-input" type="number" value="2" min="0" step="1"><br>
-            Defense Warbands: <input id="defense-warbands-input" type="number" value="6" min="0" step="1"><br>
-            <!-- <div class="input-group-container">
-                <img src="./icons/minus.png" class="input-adjust"></img>
-                <div class="input-text-container">
-                    <img src="./icons/blankShield.png" class="input-text"></img>
-                    99
-                </div>
-                <img src="./icons/plus.png" class="input-adjust"></img>
-            </div>
-            <div class="input-text-container">
-                <img src="./icons/meepleAttack.png" class="input-text"></img>
-                99
-            </div> -->
+            <div id="input-area" class="input-area"></div>
             <br>
             <button id="roll-dice">Roll Dice</button><br>
             <br>
@@ -50,6 +35,15 @@
                 <p>Probability of rolling listed amount of skulls.</p>
                 <canvas id="skull-results"></canvas><br>
                 <br>
+            </div>
+        </div>
+        <!-- TEMPLATES -->
+        <div class="input-area" style="display:none">
+            <div id="input-triple" class="input-triple">
+                <input id="input-text" class="input-text" onfocus="this.select();" value="5">
+                <img id="input-up" class="arrow-image" src="./icons/arrowUp.png">
+                <img id="input-image" class="input-image" src="./icons/blankSword.png">
+                <img id="input-down" class="arrow-image" src="./icons/arrowDown.png">
             </div>
         </div>
         <!-- Scripts -->
