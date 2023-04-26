@@ -453,7 +453,7 @@ class Roller {
 document.getElementById(htmlIDs.toggleSimulations).onclick = () => {
     let simulationDiv = document.getElementById(htmlIDs.allSimulationArea);
     if (simulationDiv.style.display === "none") {
-        simulationDiv.style.display = "block";
+        simulationDiv.style.display = "flex";
     }
     else {
         simulationDiv.style.display = "none";

@@ -16,8 +16,8 @@
 }
 
 .main {
-    width: 90vmin;
-    margin-left: 5%;
+    width: calc(min(50em,90vw));
+    margin: auto;
     font-family: 'Arial';
 }
 
@@ -34,7 +34,7 @@
     height: 0.5em;
 }
 
-
+/* INPUT AREA */
 
 .dice-face {
     height: 2em;
@@ -75,59 +75,55 @@
     position: relative;
 }
 
-.input-area {
+#input-area {
     --box-width: 2.5em;
     display: flex;
     justify-content: space-around;
-    width: calc(min(100%, calc(10*var(--box-width))));
+    width: calc(min(100%, calc(8*var(--box-width))));
     /* background-color: grey; */
     flex-wrap: wrap;
 }
 
-.simulation-table {
-    display: flex;
-    flex-wrap: wrap;
-    /* flex-direction: row; */
-    /* font-size: 1.2em; */
-    white-space: nowrap;
-}
+/* BUTTONS */
 
-
-/* SIMULATION TABLE */
-#sim {
-    /* font-family: 'roboto'; */
-    /* background-color: red; */
-}
-
-#sim thead {
-    background-color: gray;
-}
-#sim tbody{
-    /* border-collapse: collapse; */
+.button {
     background-color: lightgrey;
-}
-#sim th, td {
-    font-weight: normal;
-    padding: 0.3em;
-    vertical-align: center;
-    text-align: center;
+    border-radius: 0.3em;
+    border: 2px solid black;
+    font-size: 1em;
+    padding: 0.2em;
 }
 
 /* SIMULATION TABLES */
 
-#simulation-tables {
+.simulation-results-area {
     display: flex;
-    justify-content: space-around;
+    justify-content: center;
     flex-wrap: wrap;
     margin-right: -0.5em;
     margin-left: -0.5em
 }
 
+.simulation-results-area>*{
+    margin: 0.5em;
+}
+
+.full-width {
+    width: 100%;
+    text-align: center;
+    margin-top: 1rem;
+    margin-bottom: -0.5rem;
+    font-size: 1.4em;
+}
+
+.break {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
 .results-table {
     border-spacing: 3px;
-    margin-bottom: 1em;
-    margin-right: 0.5em;
-    margin-left: 0.5em;
     align-self: flex-start;
 }
 
@@ -135,6 +131,7 @@
     padding: 0.2em;
     background-color: lightgray;
     font-weight: normal;
+    text-align: center;
 }
 
 .results-table .headline {
