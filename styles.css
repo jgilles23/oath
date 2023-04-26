@@ -44,7 +44,9 @@
 
 .arrow-image {
     display: block;
-    width: var(--box-width);
+    width: calc(var(--box-width)*0.8);
+    padding-left: calc(var(--box-width)*0.1);
+    padding-right: calc(var(--box-width)*0.1);
 }
 
 .input-image {
@@ -76,8 +78,87 @@
 .input-area {
     --box-width: 2.5em;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     width: calc(min(100%, calc(10*var(--box-width))));
     /* background-color: grey; */
     flex-wrap: wrap;
 }
+
+.simulation-table {
+    display: flex;
+    flex-wrap: wrap;
+    /* flex-direction: row; */
+    /* font-size: 1.2em; */
+    white-space: nowrap;
+}
+
+
+/* SIMULATION TABLE */
+#sim {
+    /* font-family: 'roboto'; */
+    /* background-color: red; */
+}
+
+#sim thead {
+    background-color: gray;
+}
+#sim tbody{
+    /* border-collapse: collapse; */
+    background-color: lightgrey;
+}
+#sim th, td {
+    font-weight: normal;
+    padding: 0.3em;
+    vertical-align: center;
+    text-align: center;
+}
+
+/* SIMULATION TABLES */
+
+#simulation-tables {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    margin-right: -0.5em;
+    margin-left: -0.5em
+}
+
+.results-table {
+    border-spacing: 3px;
+    margin-bottom: 1em;
+    margin-right: 0.5em;
+    margin-left: 0.5em;
+    align-self: flex-start;
+}
+
+.results-table th, .results-table td {
+    padding: 0.2em;
+    background-color: lightgray;
+    font-weight: normal;
+}
+
+.results-table .headline {
+    font-size: 2em;
+    /* padding: 0.1em; */
+}
+
+.results-table .subheadline {
+    text-align: left;
+}
+
+.results-table .smaller {
+    font-size: 0.7em;
+}
+
+#winner-table th {
+    background-color: #D14216;
+}
+
+#defeat-table th {
+    background-color: #218BCC;
+}
+
+
+/* COLORS */
+.red {background-color: #D14216}
+.blue {background-color: #218BCC}

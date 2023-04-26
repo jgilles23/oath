@@ -28,7 +28,76 @@
             <br>
             <div id="roll-area"></div><br>
             <button id="toggle-simulations">Toggle Simulations</button>
-            <div id="simulation-results-area" style="display:none">
+            <div id="simulation-results-area" style="display:block">
+                <br>
+                <p>Simulated results</p>
+                <div id="simulation-tables">
+                    <!-- WINNER TABLE -->
+                    <table class="results-table" id="winner-table">
+                        <thead>
+                            <tr>
+                                <th id="headline-attacker-vistory" class="headline">90%</th>
+                                <th colspan="2" class="subheadline">Probability of attacker victory
+                                    <br>
+                                    <div class="smaller">when accepting all sacrafices</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td id="headline-attacker-average-losses">2.1</td>
+                                <td colspan="2" class="subheadline">Average warbands lost</td>
+                            </tr>
+                        </tbody>
+                        <thead>
+                            <tr>
+                                <th>Warbands Lost<br>
+                                    <div class="smaller">skulls + sacrafices</div>
+                                </th>
+                                <th>Scenario<br>Probability</th>
+                                <th>Cumulative<br>Probability</th>
+                            </tr>
+                        </thead>
+                        <tbody id="winner-table-body">
+                            <tr>
+                                <td>0</td>
+                                <td>10%</td>
+                                <td>10%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <!-- LOSER TABLE -->
+                    <table class="results-table" id="defeat-table">
+                        <thead>
+                            <tr>
+                                <th id="headline-attacker-defeat" class="headline">90%</th>
+                                <th colspan="2" class="subheadline">Probability of attacker defeat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td id="headline-defeat-average-losses">2.1</td>
+                                <td colspan="2" class="subheadline">Average warbands lost</td>
+                            </tr>
+                        </tbody>
+                        <thead>
+                            <tr>
+                                <th>Warbands Lost<br>
+                                    <div class="smaller">skulls + punishment</div>
+                                </th>
+                                <th>Scenario<br>Probability</th>
+                                <th>Cumulative<br>Probability</th>
+                            </tr>
+                        </thead>
+                        <tbody id="defeat-table-body">
+                            <tr>
+                                <td>0</td>
+                                <td>10%</td>
+                                <td>10%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div><br>
                 <p>Probablity of rolling more swords (positive) than shields (negative).</p>
                 <canvas id="simulation-results"></canvas><br>
                 <br>

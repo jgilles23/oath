@@ -17,7 +17,14 @@ const htmlIDs = {
     simulationArea: "simulation-results",
     skullArea: "skull-results",
     allSimulationArea: "simulation-results-area",
-    toggleSimulations: "toggle-simulations"
+    toggleSimulations: "toggle-simulations",
+    //Simulation table areas
+    winnerTableProbabilityVictory: "headline-attacker-vistory",
+    winnerTableAverageLosses: "headline-attacker-average-losses",
+    winnerTableBody: "winner-table-body",
+    defeatTableProbabilityDefeat: "headline-attacker-defeat",
+    defeatTableAverageLosses: "headline-defeat-average-losses",
+    defeatTableBody: "defeat-table-body",
 };
 // Test HTML IDs
 for (const [key, value] of Object.entries(htmlIDs)) {
@@ -64,6 +71,15 @@ var seed = cyrb128(seedString);
 let rand = sfc32(seed[0], seed[1], seed[2], seed[3]); // Call rand() to generate a random number
 //OVERRIDE RANDOM
 rand = () => Math.random();
+// FUNCTIONS FOR PARSING NUMBERS
+function parsePercent(n, decimals = 0, trimTails = false) {
+    // Parse a number in probability format (0-1) into a percent string
+    // n -- probabilit (0-1)
+    // decimals -- decimal places to show 0 to inf
+    // trimTails -- when true, something like this will happen "<1%" ">99%"
+    let rounded = Math.round(n * 100 * 10 ** decimals) / 10 ** decimals;
+    return rounded.toString() + "%";
+}
 class SimplifiedCampaign {
     constructor(attackDice, defenseDice) {
         // Create a rolling simulation for oath board game with the specified number of attack die & defense die
@@ -307,6 +323,8 @@ class Simulation {
         // Setup buttons and numbers
         this.attackDiceInput = document.getElementById("attack-dice-" + htmlIDs.templateInput);
         this.defenseDiceInput = document.getElementById("defense-dice-" + htmlIDs.templateInput);
+        this.attackWarbandsInput = document.getElementById("attack-warbands-" + htmlIDs.templateInput);
+        this.defenseWarbandsInput = document.getElementById("defense-warbands-" + htmlIDs.templateInput);
         // Load the histograms
         this.load();
     }
@@ -314,10 +332,70 @@ class Simulation {
         // Re-run the simulation for the current inputs and update the graphics
         let netSwords = [];
         let skulls = [];
+        console.log(this.attackWarbandsInput, this.attackWarbandsInput.value, parseInt(this.attackWarbandsInput.value));
+        let probabilityWarbandsLost = {
+            "Attack": new Array(parseInt(this.attackWarbandsInput.value) + 1).fill(0),
+            "Defense": new Array(parseInt(this.attackWarbandsInput.value) + 1).fill(0)
+        };
+        let averageWarbandsLost = {
+            "Attack": 0,
+            "Defense": 0
+        };
         for (let i = 0; i < this.numSimulations; i++) {
-            let campaign = new SimplifiedCampaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value));
+            let campaign = new FullCampaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value), parseInt(this.attackWarbandsInput.value), parseInt(this.defenseWarbandsInput.value));
             netSwords.push(campaign.netSwords); // Net swords, positive is more swords
             skulls.push(Math.floor(campaign.skullFaces)); // Skulls shown on dice
+            // Fill in table results
+            let attackerLosses = Math.min(campaign.attackWarbands, campaign.attackSacrafices + campaign.skullFaces);
+            if (campaign.winner === "Defense") {
+                //Attacker loses half of warbands in scenario where they lose
+                attackerLosses = attackerLosses + Math.floor((campaign.attackWarbands - attackerLosses) / 2);
+            }
+            probabilityWarbandsLost[campaign.winner][attackerLosses] += 1 / this.numSimulations;
+            averageWarbandsLost[campaign.winner] += attackerLosses / this.numSimulations;
+        }
+        //Calculate cumulative sums for warbands lost
+        let cumulativeProbabilityWarbandsLost = {
+            "Attack": [probabilityWarbandsLost["Attack"][0]],
+            "Defense": [probabilityWarbandsLost["Defense"][0]],
+        };
+        let side;
+        for (side in probabilityWarbandsLost) {
+            for (let i = 1; i < probabilityWarbandsLost[side].length; i++) {
+                cumulativeProbabilityWarbandsLost[side].push(cumulativeProbabilityWarbandsLost[side][i - 1] + probabilityWarbandsLost[side][i]);
+            }
+        }
+        //Baseline the average warbands lost for each attack and defense
+        for (side in averageWarbandsLost) {
+            let cumulativeProbability = cumulativeProbabilityWarbandsLost[side][cumulativeProbabilityWarbandsLost[side].length - 1];
+            if (cumulativeProbability === 0) {
+                averageWarbandsLost[side] = 0.0;
+            }
+            else {
+                averageWarbandsLost[side] = averageWarbandsLost[side] / cumulativeProbability;
+            }
+        }
+        console.log("after", probabilityWarbandsLost, cumulativeProbabilityWarbandsLost, averageWarbandsLost);
+        // Update the VICTORY & DEFEAT tables
+        let tableHTMLIds = {
+            "Attack": { body: htmlIDs.winnerTableBody, prob: htmlIDs.winnerTableProbabilityVictory, avg: htmlIDs.winnerTableAverageLosses },
+            "Defense": { body: htmlIDs.defeatTableBody, prob: htmlIDs.defeatTableProbabilityDefeat, avg: htmlIDs.defeatTableAverageLosses },
+        };
+        for (side in probabilityWarbandsLost) {
+            let tableBody = document.getElementById(tableHTMLIds[side].body);
+            tableBody.innerHTML = "";
+            for (let i = 0; i < probabilityWarbandsLost[side].length; i++) {
+                tableBody.innerHTML += `
+            <tr>
+                <td>${i}</td>
+                <td>${parsePercent(probabilityWarbandsLost[side][i])}</td>
+                <td>${parsePercent(cumulativeProbabilityWarbandsLost[side][i])}</td>
+            </tr>
+            `;
+            }
+            //Update the key metrics
+            document.getElementById(tableHTMLIds[side].prob).innerHTML = parsePercent(cumulativeProbabilityWarbandsLost[side][cumulativeProbabilityWarbandsLost[side].length - 1]);
+            document.getElementById(tableHTMLIds[side].avg).innerHTML = averageWarbandsLost[side].toPrecision(2);
         }
         // Update the two histograms
         this.deltaHistogram.load(netSwords);
@@ -383,10 +461,10 @@ document.getElementById(htmlIDs.toggleSimulations).onclick = () => {
 };
 const idPrefixesAndImageNames = [
     // [id prefix, icon name, starting value]
-    ["attack-dice", "blankSword", 5],
-    ["attack-warbands", "meepleAttack", 0],
+    ["attack-dice", "blankSword", 4],
+    ["attack-warbands", "meepleAttack", 4],
     ["defense-dice", "blankShield", 2],
-    ["defense-warbands", "meepleDefense", 0]
+    ["defense-warbands", "meepleDefense", 4]
 ];
 let inputArea = document.getElementById(htmlIDs.inputArea);
 for (let L of idPrefixesAndImageNames) {
