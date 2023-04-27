@@ -617,3 +617,5 @@ for (let L of idPrefixesAndImageNames) {
 document.getElementById(htmlIDs.rollButton)!.onclick = () => {
     roller.roll()
 }
+
+// push comment
