@@ -18,6 +18,20 @@ const htmlIDs = {
     skullArea: "skull-results",
     allSimulationArea: "simulation-results-area",
     toggleSimulations: "toggle-simulations",
+    // Roll table areas
+    rollResultsArea: "roll-results-area",
+    rollTableVictor: "roll-table-victor",
+    rollTableVictorLabel: "roll-table-victor-label",
+    rollTableSkulls: "roll-table-skulls",
+    rollTableVariableText: "roll-table-item2-text",
+    rollTableVariableValue: "roll-table-item2-value",
+    rollTableAttackLosses: "roll-table-attack-losses",
+    rollTableExplanationText: "roll-table-explanation-text",
+    rollStatsSwords: "roll-stats-swords",
+    rollStatsShields: "roll-stats-shields",
+    rollStatsNetSwords: "roll-stats-net-swords",
+    rollStatsDefenseWarbands: "roll-stats-defense-warbands",
+    rollStatsNetAttack: "roll-stats-net-attack",
     //Simulation table areas
     winnerTableProbabilityVictory: "headline-attacker-vistory",
     winnerTableAverageLosses: "headline-attacker-average-losses",
@@ -99,7 +113,6 @@ class SimplifiedCampaign {
         this.shields = 0;
         // Cumulative properties
         this.netSwords = 0;
-        this.netWarbands = 0;
         // ROLL the dice
         for (let i = 0; i < (attackDice | 0); i++) {
             this.rollAttack();
@@ -127,7 +140,6 @@ class SimplifiedCampaign {
         // Calculate the current attack
         this.swords = this.fullSwordFaces + Math.floor(this.halfSwordFaces / 2) + 2 * this.skullFaces;
         this.netSwords = this.swords - this.shields;
-        this.netWarbands = this.netSwords - this.skullFaces;
     }
     rollDefense() {
         // Roll an defense die from oath and add to the roll results
@@ -152,7 +164,6 @@ class SimplifiedCampaign {
         // Calculate the current defense
         this.shields = (this.oneShieldFaces + 2 * this.twoShieldFaces) * 2 ** (this.doubleFaces);
         this.netSwords = this.swords - this.shields;
-        this.netWarbands = this.netSwords - this.skullFaces;
     }
 }
 class FullCampaign extends SimplifiedCampaign {
@@ -162,18 +173,25 @@ class FullCampaign extends SimplifiedCampaign {
         this.attackWarbands = attackWarbands | 0;
         this.defenseWarbands = defenseWarbands | 0;
         this.attackSacrafices = 0;
+        this.attackDefeatPunishment = 0;
         this.netAttack = this.netSwords - this.defenseWarbands;
         // Calculate winner and associated properties
         if (this.netAttack > 0) {
             this.winner = "Attack";
+            this.victoryFlag = true;
         }
         else if (this.netAttack + this.attackWarbands - this.skullFaces > 0) {
             this.winner = "Attack";
+            this.victoryFlag = true;
             this.attackSacrafices = -1 * this.netAttack + 1;
         }
         else {
             this.winner = "Defense";
+            this.victoryFlag = false;
+            // Assume defeat punishment is half of warbands remaining divided by 2 rounded down
+            this.attackDefeatPunishment = Math.floor(Math.max(0, this.attackWarbands - this.skullFaces) / 2);
         }
+        this.attackLosses = Math.min(this.skullFaces, this.attackWarbands) + this.attackSacrafices + this.attackDefeatPunishment;
     }
 }
 class Histogram {
@@ -332,7 +350,6 @@ class Simulation {
         // Re-run the simulation for the current inputs and update the graphics
         let netSwords = [];
         let skulls = [];
-        console.log(this.attackWarbandsInput, this.attackWarbandsInput.value, parseInt(this.attackWarbandsInput.value));
         let probabilityWarbandsLost = {
             "Attack": new Array(parseInt(this.attackWarbandsInput.value) + 1).fill(0),
             "Defense": new Array(parseInt(this.attackWarbandsInput.value) + 1).fill(0)
@@ -346,13 +363,8 @@ class Simulation {
             netSwords.push(campaign.netSwords); // Net swords, positive is more swords
             skulls.push(Math.floor(campaign.skullFaces)); // Skulls shown on dice
             // Fill in table results
-            let attackerLosses = Math.min(campaign.attackWarbands, campaign.attackSacrafices + campaign.skullFaces);
-            if (campaign.winner === "Defense") {
-                //Attacker loses half of warbands in scenario where they lose
-                attackerLosses = attackerLosses + Math.floor((campaign.attackWarbands - attackerLosses) / 2);
-            }
-            probabilityWarbandsLost[campaign.winner][attackerLosses] += 1 / this.numSimulations;
-            averageWarbandsLost[campaign.winner] += attackerLosses / this.numSimulations;
+            probabilityWarbandsLost[campaign.winner][campaign.attackLosses] += 1 / this.numSimulations;
+            averageWarbandsLost[campaign.winner] += campaign.attackLosses / this.numSimulations;
         }
         //Calculate cumulative sums for warbands lost
         let cumulativeProbabilityWarbandsLost = {
@@ -375,7 +387,6 @@ class Simulation {
                 averageWarbandsLost[side] = averageWarbandsLost[side] / cumulativeProbability;
             }
         }
-        console.log("after", probabilityWarbandsLost, cumulativeProbabilityWarbandsLost, averageWarbandsLost);
         // Update the VICTORY & DEFEAT tables
         let tableHTMLIds = {
             "Attack": { body: htmlIDs.winnerTableBody, prob: htmlIDs.winnerTableProbabilityVictory, avg: htmlIDs.winnerTableAverageLosses },
@@ -408,13 +419,18 @@ class Roller {
         this.defenseDiceInput = document.getElementById("defense-dice-" + htmlIDs.templateInput);
         this.attackWarbandsInput = document.getElementById("attack-warbands-" + htmlIDs.templateInput);
         this.defenseWarbandsInput = document.getElementById("defense-warbands-" + htmlIDs.templateInput);
+        this.clear();
     }
     clear() {
-        let areaDiv = document.getElementById(htmlIDs.rollArea);
-        areaDiv.innerHTML = "";
+        // Hide the roll results area
+        document.getElementById(htmlIDs.rollResultsArea).style.display = "none";
     }
     roll() {
         // Animate a simulated rolling of the dice
+        // Clear dice aleady there
+        document.getElementById(htmlIDs.rollArea).innerHTML = "";
+        // Show the roll results area
+        document.getElementById(htmlIDs.rollResultsArea).style.display = "flex";
         let campaign = new FullCampaign(parseInt(this.attackDiceInput.value), parseInt(this.defenseDiceInput.value), parseInt(this.attackWarbandsInput.value), parseInt(this.defenseWarbandsInput.value));
         const attributeIconPairs = [
             [campaign.skullFaces, "skullSword.png"],
@@ -437,17 +453,28 @@ class Roller {
                 areaDiv.appendChild(diceFace);
             }
         }
-        // Add text to help the player understand the result
-        let explanationText = document.createElement("p");
-        areaDiv.appendChild(explanationText);
-        let sacraficeText = campaign.attackSacrafices > 0 ? `(with ${campaign.attackSacrafices} sacrafice)` : "";
-        explanationText.innerHTML = `
-        Skulls: ${campaign.skullFaces},
-        Swords: ${campaign.swords}, 
-        Shields: ${campaign.shields}, <br>
-        Net Attack: ${campaign.netAttack} <br>
-        Winner: ${campaign.winner} ${sacraficeText}
-        `;
+        // Fill in the resutls table
+        function setText(label, text) {
+            document.getElementById(label).textContent = text.toString();
+        }
+        document.getElementById(htmlIDs.rollTableVictorLabel).style.backgroundColor = campaign.victoryFlag ? "#D14216" : "#218BCC";
+        document.getElementById(htmlIDs.rollTableVictor).style.backgroundColor = campaign.victoryFlag ? "#D14216" : "#218BCC";
+        setText(htmlIDs.rollTableVictor, campaign.victoryFlag ?
+            campaign.attackSacrafices > 0 ? "Attack*" : "Attack" :
+            "Defense");
+        setText(htmlIDs.rollTableSkulls, campaign.skullFaces);
+        setText(htmlIDs.rollTableVariableText, campaign.victoryFlag ? "Sacrafices*" : "Punishment*");
+        setText(htmlIDs.rollTableVariableValue, campaign.victoryFlag ? campaign.attackSacrafices : campaign.attackDefeatPunishment);
+        setText(htmlIDs.rollTableAttackLosses, campaign.attackLosses);
+        setText(htmlIDs.rollTableExplanationText, campaign.victoryFlag ?
+            "*Attack may choose defeat instead of sacrafices" :
+            "*Punishment is half of attacker warbands rounded down");
+        // Fill in the stats table
+        setText(htmlIDs.rollStatsSwords, campaign.swords);
+        setText(htmlIDs.rollStatsShields, campaign.shields);
+        setText(htmlIDs.rollStatsNetSwords, campaign.netSwords);
+        setText(htmlIDs.rollStatsDefenseWarbands, campaign.defenseWarbands);
+        setText(htmlIDs.rollStatsNetAttack, campaign.netAttack);
     }
 }
 document.getElementById(htmlIDs.toggleSimulations).onclick = () => {
@@ -459,6 +486,8 @@ document.getElementById(htmlIDs.toggleSimulations).onclick = () => {
         simulationDiv.style.display = "none";
     }
 };
+// HIDE THE SIMULATIONS WHEN LOADING THE PAGE
+document.getElementById(htmlIDs.allSimulationArea).style.display = "none";
 const idPrefixesAndImageNames = [
     // [id prefix, icon name, starting value]
     ["attack-dice", "blankSword", 4],

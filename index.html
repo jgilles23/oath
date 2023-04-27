@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <title>Oath</title>
-    <!-- <link rel="icon" type="image/x-icon" href="./favicon.ico"> -->
+    <link rel="icon" type="image/x-icon" href="./icons/meepleAttack.png">
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="styles.css">
@@ -22,18 +22,81 @@
             </div> -->
         </div>
         <div>
-            <div class="simulation-results-area">
-                <p class="full-width">Dice and warlords input</p>
+            <div class="standard-flex">
+                <p class="full-width">Dice and warbands input</p>
                 <div id="input-area"></div>
                 <div class="break"></div>
                 <button id="roll-dice" class="button">Roll Dice</button>
-                <div class="break"></div>
+            </div>
+            <div id="roll-results-area" class="standard-flex">
                 <div id="roll-area"></div>
+                <div class="break"></div>
+                <div class="standard-flex">
+                    <table id="roll-table" class="results-table roll-table">
+                        <thead>
+                            <tr>
+                                <th id="roll-table-victor-label">Victor</th>
+                                <th id="roll-table-victor" class="smaller-headline">Attack*</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Skulls</td>
+                                <td id="roll-table-skulls">1</td>
+                            </tr>
+                            <tr>
+                                <td id="roll-table-item2-text">Sacrafices*</td>
+                                <td id="roll-table-item2-value">2</td>
+                            </tr>
+                            <tr class="bold">
+                                <td>Attack losses</td>
+                                <td id="roll-table-attack-losses">3</td>
+                            </tr>
+                            <tr>
+                                <td id="roll-table-explanation-text" colspan="2" class="smaller">*Attack may choose
+                                    defeat instead of sacrafices
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table id="roll-stats-table" class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Swords rolled</td>
+                                <td id="roll-stats-swords">5</td>
+                            </tr>
+                            <tr>
+                                <td>Shields rolled</td>
+                                <td id="roll-stats-shields">2</td>
+                            </tr>
+                            <tr class="bold">
+                                <td>Net swords</td>
+                                <td id="roll-stats-net-swords">3</td>
+                            </tr>
+                            <tr>
+                                <td>Defense warbands</td>
+                                <td id="roll-stats-defense-warbands">4</td>
+                            </tr>
+                            <tr class="bold">
+                                <td>Net attack</td>
+                                <td id="roll-stats-net-attack">-1</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="standard-flex">
                 <div class="break"></div>
                 <button id="toggle-simulations" class="button">Toggle Simulations</button>
             </div>
-            <div id="simulation-results-area" class="simulation-results-area">
-                <p class="full-width">Expected outcomes a roll</p>
+            <div id="simulation-results-area" class="standard-flex">
+                <p class="full-width">Expected outcomes for campaign roll</p>
                 <!-- WINNER TABLE -->
                 <table class="results-table" id="winner-table">
                     <thead>

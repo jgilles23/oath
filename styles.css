@@ -16,7 +16,7 @@
 }
 
 .main {
-    width: calc(min(50em,90vw));
+    width: calc(min(50em, 90vw));
     margin: auto;
     font-family: 'Arial';
 }
@@ -94,9 +94,9 @@
     padding: 0.2em;
 }
 
-/* SIMULATION TABLES */
+/* STANDARD FLEX FORMATTING */
 
-.simulation-results-area {
+.standard-flex {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
@@ -104,7 +104,7 @@
     margin-left: -0.5em
 }
 
-.simulation-results-area>*{
+.standard-flex>* {
     margin: 0.5em;
 }
 
@@ -122,13 +122,16 @@
     margin: 0;
 }
 
+/* SIMULATION TABLE FORMATTING */
+
 .results-table {
     border-spacing: 3px;
     align-self: flex-start;
 }
 
-.results-table th, .results-table td {
-    padding: 0.2em;
+.results-table th,
+.results-table td {
+    padding: 0.2rem;
     background-color: lightgray;
     font-weight: normal;
     text-align: center;
@@ -136,7 +139,10 @@
 
 .results-table .headline {
     font-size: 2em;
-    /* padding: 0.1em; */
+}
+
+.results-table .smaller-headline {
+    font-size: 1.4em;
 }
 
 .results-table .subheadline {
@@ -147,6 +153,12 @@
     font-size: 0.7em;
 }
 
+.results-table .bold *{
+    font-weight: bold;
+}
+
+/* SPECIFC FORMATTING FOR INDIVIDUAL TABLES */
+
 #winner-table th {
     background-color: #D14216;
 }
@@ -155,7 +167,28 @@
     background-color: #218BCC;
 }
 
+#roll-table th {
+    background-color: #D14216;
+}
+
+#roll-stats-table th {
+    background-color: #767171;
+}
+
+/* #roll-table tr>*:first-child:not(#roll-explanation-text) {
+    text-align: right
+} */
+
+#roll-table-explanation-text{
+    width: 100px;
+    text-align: left;
+}
 
 /* COLORS */
-.red {background-color: #D14216}
-.blue {background-color: #218BCC}
+.red {
+    background-color: #D14216
+}
+
+.blue {
+    background-color: #218BCC
+}
